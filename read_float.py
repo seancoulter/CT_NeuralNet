@@ -58,7 +58,7 @@ def makePatches():
     
     if not os.path.exists(args.save_dir):
         os.mkdir(args.save_dir)
-    np.save(os.path.join(args.save_dir, "img_ldct_pats"), inputs)
+    np.save(os.path.join(args.save_dir, "raw_float_pats"), inputs)
     print( "size of inputs tensor = " + str(inputs.shape))
     
     exit(0)
