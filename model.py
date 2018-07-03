@@ -2,6 +2,7 @@ import time
 
 from utils import *
 from six.moves import xrange
+import numpy as np
 
 
 def dncnn(input, is_training=True, output_channels=1):
@@ -42,16 +43,19 @@ class denoiser(object):
         # assert test_data value range is 0-255
         print("[*] Evaluating...")
         psnr_sum = 0
+        max_ldct= np.amax(ldct_test_data)
+        max_ndct= np.amax(ndct_test_data)
         for idx in xrange(len(ldct_test_data)):
-            noisy_image = ldct_test_data[idx].astype(np.float32) / 255.0
-            clean_image = ndct_test_data[idx].astype(np.float32) / 255.0
+            noisy_image = ldct_test_data[idx]
+            clean_image = ndct_test_data[idx]
             output_clean_image, psnr_summary = self.sess.run(
                 [self.Y, summary_merged],
                 feed_dict={self.X: noisy_image,
                            self.Y_: clean_image,
                            self.is_training: False})
             summary_writer.add_summary(psnr_summary, iter_num)
-
+            clean_image= clean_image / max_ndct
+            noisy_image= noisy_image / max_ldct
             clean_image = np.clip(255 * clean_image, 0, 255).astype('uint8')
             noisy_image = np.clip(255 * noisy_image, 0, 255).astype('uint8')
             output_clean_image = np.clip(255 * output_clean_image, 0, 255).astype('uint8')
@@ -59,6 +63,7 @@ class denoiser(object):
             psnr = cal_psnr(clean_image, output_clean_image)
             print("img%d PSNR: %.2f" % (idx + 1, psnr))
             psnr_sum += psnr
+            clean_image, noisy_image= arr2Img(clean_image, noisy_image)
             save_images(os.path.join(sample_dir, 'test%d_%d.png' % (idx + 1, iter_num)),
                         clean_image, noisy_image, output_clean_image)
         avg_psnr = psnr_sum / len(ndct_test_data)
@@ -157,7 +162,7 @@ class denoiser(object):
             psnr = cal_psnr(groundtruth, outputimage)
             print("img%d PSNR: %.2f" % (idx, psnr))
             psnr_sum += psnr
-            save_images(os.path.join(save_dir, 'noisy%d.png' % idx), noisyimage)
-            save_images(os.path.join(save_dir, 'denoised%d.png' % idx), outputimage)
+            save_images(os.path.join(save_dir, 'noisy%d.flt' % idx), noisyimage)
+            save_images(os.path.join(save_dir, 'denoised%d.flt' % idx), outputimage)
         avg_psnr = psnr_sum / len(test_files)
         print("--- Average PSNR %.2f ---" % avg_psnr)

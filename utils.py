@@ -62,6 +62,24 @@ def load_data(filepath='./data/image_clean_pat.npy'):
     return train_data(filepath=filepath)
 
 
+def load_floats(filelist):
+    data= []
+    DEF_IMG_SIZE= 512
+    if not isinstance(filelist, list):
+        return np.array(filelist).reshape(1, DEF_IMG_SIZE, DEF_IMG_SIZE, 1)
+    for float_arr in filelist:
+        float_arr= np.fromfile(float_arr, dtype= '<f')
+       # print(float_arr)
+        data.append(np.array(float_arr).reshape(1, DEF_IMG_SIZE, DEF_IMG_SIZE, 1))
+    return data
+
+def arr2Img(clean, noisy):
+    clean= np.squeeze(clean)
+    noisy= np.squeeze(noisy)
+    clean= Image.fromarray(clean, 'L')
+    noisy= Image.fromarray(noisy, 'L')
+    return clean, noisy
+
 def load_images(filelist):
     # pixel value range 0-255
     if not isinstance(filelist, list):

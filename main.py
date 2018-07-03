@@ -21,16 +21,19 @@ parser.add_argument('--test_set', dest='test_set', default='BSD68', help='datase
 args = parser.parse_args()
 
 
+#filepath:./noisydata/ndct/train/img_ndct_pats.npy
+# ./noisydata/ldct/train/img_ndct_pats.npy
 def denoiser_train(denoiser, lr):
-    with load_data(filepath='./noisydata/ndct/train/img_ndct_pats.npy') as ndct_data,load_data(filepath='./noisydata/ldct/train/img_ldct_pats.npy') as ldct_data:
+    with load_data(filepath='./noisydata/ndct/train/raw_float_pats.npy') as ndct_data, load_data(filepath='./noisydata/ldct/train/raw_float_pats.npy') as ldct_data:
         # if there is a small memory, please comment this line and uncomment the line99 in model.py
-        ndct_data = ndct_data.astype(np.float32) / 255.0  # normalize the data to 0-1
-        ldct_data = ldct_data.astype(np.float32) / 255.0  # normalize the data to 0-1
-        ldct_eval_files = glob('./noisydata/ldct/test/*.png'.format(args.eval_set))
-        ldct_eval_data = load_images(ldct_eval_files)  # list of array of different size, 4-D, pixel value range is 0-255
-        ndct_eval_files = glob('./noisydata/ndct/test/*.png'.format(args.eval_set))
-        ndct_eval_data = load_images(ndct_eval_files)  # list of array of different size, 4-D, pixel value range is 0-255
-  
+        #print(ndct_data[0:30])
+#        ndct_data = ndct_data.astype(np.float32) / 255.0  # normalize the data to 0-1
+#        ldct_data = ldct_data.astype(np.float32) / 255.0  # normalize the data to 0-1
+        ldct_eval_files = glob('./noisydata/ldct/test/*img.flt'.format(args.eval_set))
+        ldct_eval_data = load_floats(ldct_eval_files)  # list of array of different size, 4-D, pixel value range is 0-255
+        ndct_eval_files = glob('./noisydata/ndct/test/*img.flt'.format(args.eval_set))
+        ndct_eval_data = load_floats(ndct_eval_files)  # list of array of different size, 4-D, pixel value range is 0-255
+
         denoiser.train(ndct_data, ldct_data, ndct_eval_data, ldct_eval_data, batch_size=args.batch_size, ckpt_dir=args.ckpt_dir, epoch=args.epoch, lr=lr,
                        sample_dir=args.sample_dir)
 
