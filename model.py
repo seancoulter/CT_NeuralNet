@@ -75,7 +75,7 @@ class denoiser(object):
 #                                                              feed_dict={self.Y_: data, self.is_training: False})
 #        return output_clean_image, noisy_image, psnr
 
-    def train(self, ndct_data, ldct_data, ndct_eval_data, ldct_eval_data,batch_size, ckpt_dir, epoch, lr, sample_dir, eval_every_epoch=1):
+    def train(self, ndct_data, ldct_data, ndct_eval_data, ldct_eval_data, batch_size, ckpt_dir, epoch, lr, sample_dir, eval_every_epoch=1):
         # assert data range is between 0 and 1
         numBatch = int(ndct_data.shape[0] / batch_size)
         # load pretrained model
@@ -103,7 +103,7 @@ class denoiser(object):
         for epoch in xrange(start_epoch, epoch):
             p = np.random.permutation(len(ndct_data))
             ndct_data, ldct_data = ndct_data[p], ldct_data[p]    #ensure shuffling in unison
-            for batch_id in xrange(start_step, numBatch):
+            for batch_id in xrange(start_step, batch_size):
                 ndct_batch_images, ldct_batch_images = ndct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :], ldct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :]
                 # batch_images = batch_images.astype(np.float32) / 255.0 # normalize the data to 0-1
                 _, loss, summary = self.sess.run([self.train_op, self.loss, merged],
@@ -152,7 +152,7 @@ class denoiser(object):
         psnr_sum = 0
         print("[*] start testing...")
         for idx in xrange(len(test_files)):
-            clean_image = load_images(test_files[idx]).astype(np.float32) / 255.0
+            clean_image = load_floats(test_files[idx])
             output_clean_image, noisy_image = self.sess.run([self.Y, self.X],
                                                             feed_dict={self.Y_: clean_image, self.is_training: False})
             groundtruth = np.clip(255 * clean_image, 0, 255).astype('uint8')

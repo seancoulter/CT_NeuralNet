@@ -66,7 +66,8 @@ def load_floats(filelist):
     data= []
     DEF_IMG_SIZE= 512
     if not isinstance(filelist, list):
-        return np.array(filelist).reshape(1, DEF_IMG_SIZE, DEF_IMG_SIZE, 1)
+        float_arr= np.fromfile(filelist, dtype= '<f')
+        return np.array(float_arr).reshape(1, DEF_IMG_SIZE, DEF_IMG_SIZE, 1)
     for float_arr in filelist:
         float_arr= np.fromfile(float_arr, dtype= '<f')
        # print(float_arr)
