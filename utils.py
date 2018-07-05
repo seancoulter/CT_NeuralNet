@@ -75,8 +75,10 @@ def load_floats(filelist):
     return data
 
 def arr2Img(clean, noisy):
-    clean= np.squeeze(clean)
-    noisy= np.squeeze(noisy)
+    #clean= np.squeeze(clean)
+    #noisy= np.squeeze(noisy)
+    clean= np.reshape(clean, (512, 512))
+    noisy= np.reshape(noisy, (512, 512))
     clean= Image.fromarray(clean, 'L')
     noisy= Image.fromarray(noisy, 'L')
     return clean, noisy

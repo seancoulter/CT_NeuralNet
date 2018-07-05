@@ -42,20 +42,21 @@ class denoiser(object):
     def evaluate(self, iter_num, ndct_test_data,ldct_test_data, sample_dir, summary_merged, summary_writer):
         # assert test_data value range is 0-255
         print("[*] Evaluating...")
-        psnr_sum = 0
-        max_ldct= np.amax(ldct_test_data)
-        max_ndct= np.amax(ndct_test_data)
+        psnr_sum = 0      
         for idx in xrange(len(ldct_test_data)):
             noisy_image = ldct_test_data[idx]
             clean_image = ndct_test_data[idx]
+            max_ldct= np.amax(noisy_image)
+            max_ndct= np.amax(clean_image)
+            clean_image= clean_image / max_ndct
+            noisy_image= noisy_image / max_ldct
             output_clean_image, psnr_summary = self.sess.run(
                 [self.Y, summary_merged],
                 feed_dict={self.X: noisy_image,
                            self.Y_: clean_image,
                            self.is_training: False})
             summary_writer.add_summary(psnr_summary, iter_num)
-            clean_image= clean_image / max_ndct
-            noisy_image= noisy_image / max_ldct
+            scalef= max(np.amax(clean_image), np.amax(noisy_image), np.amax(output_clean_image))
             clean_image = np.clip(255 * clean_image, 0, 255).astype('uint8')
             noisy_image = np.clip(255 * noisy_image, 0, 255).astype('uint8')
             output_clean_image = np.clip(255 * output_clean_image, 0, 255).astype('uint8')
