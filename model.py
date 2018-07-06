@@ -104,7 +104,7 @@ class denoiser(object):
         for epoch in xrange(start_epoch, epoch):
             p = np.random.permutation(len(ndct_data))
             ndct_data, ldct_data = ndct_data[p], ldct_data[p]    #ensure shuffling in unison
-            for batch_id in xrange(start_step, batch_size):
+            for batch_id in xrange(start_step, numBatch):
                 ndct_batch_images, ldct_batch_images = ndct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :], ldct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :]
                 # batch_images = batch_images.astype(np.float32) / 255.0 # normalize the data to 0-1
                 _, loss, summary = self.sess.run([self.train_op, self.loss, merged],
