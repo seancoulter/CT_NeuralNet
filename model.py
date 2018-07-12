@@ -3,7 +3,7 @@ import time
 from utils import *
 from six.moves import xrange
 import numpy as np
-
+import pdb
 
 def dncnn(input, is_training=True, output_channels=1):
     with tf.variable_scope('block1'):
@@ -46,10 +46,10 @@ class denoiser(object):
         for idx in xrange(len(ldct_test_data)):
             noisy_image = ldct_test_data[idx]
             clean_image = ndct_test_data[idx]
-            max_ldct= np.amax(noisy_image)
-            max_ndct= np.amax(clean_image)
-            clean_image= clean_image / max_ndct
-            noisy_image= noisy_image / max_ldct
+            #max_ldct= np.amax(noisy_image)
+            #max_ndct= np.amax(clean_image)
+            #clean_image= clean_image / max_ndct
+            #noisy_image= noisy_image / max_ldct
             output_clean_image, psnr_summary = self.sess.run(
                 [self.Y, summary_merged],
                 feed_dict={self.X: noisy_image,
@@ -57,9 +57,9 @@ class denoiser(object):
                            self.is_training: False})
             summary_writer.add_summary(psnr_summary, iter_num)
             scalef= max(np.amax(clean_image), np.amax(noisy_image), np.amax(output_clean_image))
-            clean_image = np.clip(255 * clean_image, 0, 255).astype('uint8')
-            noisy_image = np.clip(255 * noisy_image, 0, 255).astype('uint8')
-            output_clean_image = np.clip(255 * output_clean_image, 0, 255).astype('uint8')
+            clean_image = np.clip(255 * clean_image/scalef, 0, 255).astype('uint8')
+            noisy_image = np.clip(255 * noisy_image/scalef, 0, 255).astype('uint8')
+            output_clean_image = np.clip(255 * output_clean_image/scalef, 0, 255).astype('uint8')
             # calculate PSNR
             psnr = cal_psnr(clean_image, output_clean_image)
             print("img%d PSNR: %.2f" % (idx + 1, psnr))
@@ -104,6 +104,7 @@ class denoiser(object):
         for epoch in xrange(start_epoch, epoch):
             p = np.random.permutation(len(ndct_data))
             ndct_data, ldct_data = ndct_data[p], ldct_data[p]    #ensure shuffling in unison
+            #pdb.set_trace()
             for batch_id in xrange(start_step, numBatch):
                 ndct_batch_images, ldct_batch_images = ndct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :], ldct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :]
                 # batch_images = batch_images.astype(np.float32) / 255.0 # normalize the data to 0-1

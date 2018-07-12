@@ -33,13 +33,12 @@ def denoiser_train(denoiser, lr):
         ldct_eval_data = load_floats(ldct_eval_files)  # list of array of different size, 4-D, pixel value range is 0-255
         ndct_eval_files = glob('./noisydata/ndct/test/*img.flt'.format(args.eval_set))
         ndct_eval_data = load_floats(ndct_eval_files)  # list of array of different size, 4-D, pixel value range is 0-255
-
         denoiser.train(ndct_data, ldct_data, ndct_eval_data, ldct_eval_data, batch_size=args.batch_size, ckpt_dir=args.ckpt_dir, epoch=args.epoch, lr=lr,
                        sample_dir=args.sample_dir)
 
 
 def denoiser_test(denoiser):
-    test_files = glob('./noisydata/ldct/test/*img.flt'.format(args.test_set))
+    test_files = glob('./noisydata/ndct/test/*img.flt'.format(args.test_set))
     denoiser.test(test_files, ckpt_dir=args.ckpt_dir, save_dir=args.test_dir)
 
 
