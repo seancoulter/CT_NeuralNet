@@ -6,8 +6,8 @@ from PIL import Image
 import glob
 
 parser = argparse.ArgumentParser(description='')
-parser.add_argument('--src_dir', dest='f', default='./noisydata/ldct/train', help='FLT file')
-parser.add_argument('--save_dir', dest='save_dir', default='./ldctdata', help='dir of patches')
+parser.add_argument('--src_dir', dest='f', default='./noisydata/sparse/train', help='FLT file')
+parser.add_argument('--save_dir', dest='save_dir', default='./sparsedata', help='dir of patches')
 parser.add_argument('--patch_size', dest='pat_size', type=int, default=32, help='patch size')
 parser.add_argument('-size', dest='size', default= 512, help='image size')
 parser.add_argument('--stride', dest='stride', type=int, default=4, help='stride')
@@ -22,6 +22,8 @@ def makePatches():
     size= args.size   #all images assumed to be the same size
     count= 0
     srcPath = glob.glob(args.f + '/*img.flt')
+    srcPath= sorted(srcPath)
+    print(srcPath)
     for i in range(len(srcPath)):
         for x in range(0 + args.offset, (size - args.pat_size), args.stride):
             for y in range(0 + args.offset, (size - args.pat_size), args.stride):
@@ -38,7 +40,7 @@ def makePatches():
       (numPatches, args.bat_size, numPatches / args.bat_size))
         
     inputs = np.zeros((numPatches, args.pat_size, args.pat_size, 1), dtype="f")
-        
+    
     count= 0
     for i in range(len(srcPath)):
         arr= np.fromfile(srcPath[i], dtype= '<f')       #matlab binary -> float array
