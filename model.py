@@ -150,6 +150,7 @@ class denoiser(object):
         print(" [*] Load weights SUCCESS...")
         psnr_sum = 0
         print("[*] start testing...")
+	rawfiles= [open(os.path.join(save_dir, "test_{}.flt".format(idx)), 'wb') for idx in range (len(ndct_files))]
 	for idx in xrange(len(ldct_files)):
 	    noisy_image= ldct_files[idx]
 	    clean_image= ndct_files[idx]
@@ -160,18 +161,19 @@ class denoiser(object):
                            self.is_training: False})
 	    output_clean_image= np.asarray(output_clean_image)
 	    #output_clean_image= output_clean_image[255, :, :, :, :]
-            scalef= max(np.amax(noisy_image), np.amax(clean_image), np.amax(output_clean_image))
-            noisy_image = np.clip(255 * noisy_image/scalef, 0, 255).astype('uint8')
-            output_clean_image = np.clip(255 * output_clean_image/scalef, 0, 255).astype('uint8')
-            clean_image = np.clip(255 * clean_image/scalef, 0, 255).astype('uint8')
+            #scalef= max(np.amax(clean_image), np.amax(output_clean_image))
+            #noisy_image = np.clip(255 * noisy_image/scalef, 0, 255).astype('uint8')
+            #scaled_output = np.clip(255 * output_clean_image/scalef, 0, 255).astype('uint8')
+            #clean_image = np.clip(255 * clean_image/scalef, 0, 255).astype('uint8')
             # calculate PSNR
             psnr = cal_psnr(clean_image, output_clean_image)
             print("img%d PSNR: %.2f" % (idx, psnr))
             psnr_sum += psnr
-            output_clean_image, noisy_image= arr2Img(output_clean_image, noisy_image)
-	    clean_image= np.reshape(clean_image, (512, 512))
-            clean_image= Image.fromarray(clean_image, 'L')
-            save_images(os.path.join(save_dir, 'test_%d.png' % (idx + 1)),
-                        clean_image, noisy_image, output_clean_image)
+            #output_clean_image, noisy_image= arr2Img(output_clean_image, noisy_image)
+	    #clean_image= np.reshape(clean_image, (512, 512))
+            #clean_image= Image.fromarray(clean_image, 'L')
+            #save_images(os.path.join(save_dir, 'test_%d.flt' % (idx + 1)),
+            #            clean_image, noisy_image, output_clean_image)
+	    output_clean_image.tofile(rawfiles[idx])
         avg_psnr = psnr_sum / len(ndct_files)
         print("--- Average PSNR %.2f ---" % avg_psnr)
