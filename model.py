@@ -39,23 +39,20 @@ class denoiser(object):
         self.sess.run(init)
         print("[*] Initialize model successfully...")
 
-    def evaluate(self, iter_num, ndct_test_data,ldct_test_data, sample_dir, summary_merged, summary_writer):
+    def evaluate(self, iter_num, ndct_test_data,ldct_test_data, sample_dir, summary_merged, summary_writer, summ_img):
         # assert test_data value range is 0-255
         print("[*] Evaluating...")
         psnr_sum = 0      
         for idx in xrange(len(ldct_test_data)):
             noisy_image = ldct_test_data[idx]
             clean_image = ndct_test_data[idx]
-            #max_ldct= np.amax(noisy_image)
-            #max_ndct= np.amax(clean_image)
-            #clean_image= clean_image / max_ndct
-            #noisy_image= noisy_image / max_ldct
-            output_clean_image, psnr_summary = self.sess.run(
-                [self.Y, summary_merged],
+            output_clean_image, psnr_summary, temp_img = self.sess.run(
+                [self.Y, summary_merged, summ_img],
                 feed_dict={self.X: noisy_image,
                            self.Y_: clean_image,
                            self.is_training: False})
             summary_writer.add_summary(psnr_summary, iter_num)
+	    summary_writer.add_summary(temp_img, iter_num)
             scalef= max(np.amax(clean_image), np.amax(noisy_image), np.amax(output_clean_image))
             clean_image = np.clip(255 * clean_image/scalef, 0, 255).astype('uint8')
             noisy_image = np.clip(255 * noisy_image/scalef, 0, 255).astype('uint8')
@@ -94,20 +91,20 @@ class denoiser(object):
         # make summary
         tf.summary.scalar('loss', self.loss)
         tf.summary.scalar('lr', self.lr)
+	img= tf.summary.image('denoised image', self.Y, max_outputs=1)
         writer = tf.summary.FileWriter('./logs', self.sess.graph)
         merged = tf.summary.merge_all()
         summary_psnr = tf.summary.scalar('eva_psnr', self.eva_psnr)
         print("[*] Start training, with start epoch %d start iter %d : " % (start_epoch, iter_num))
         start_time = time.time()
         self.evaluate(iter_num, ndct_eval_data, ldct_eval_data, sample_dir=sample_dir, summary_merged=summary_psnr,
-                      summary_writer=writer)  # eval_data value range is 0-255
+                      summary_writer=writer, summ_img=img)  # eval_data value range is 0-255
         for epoch in xrange(start_epoch, epoch):
             p = np.random.permutation(len(ndct_data))
             ndct_data, ldct_data = ndct_data[p], ldct_data[p]    #ensure shuffling in unison
             #pdb.set_trace()
             for batch_id in xrange(start_step, numBatch):
                 ndct_batch_images, ldct_batch_images = ndct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :], ldct_data[batch_id * batch_size:(batch_id + 1) * batch_size, :, :, :]
-                # batch_images = batch_images.astype(np.float32) / 255.0 # normalize the data to 0-1
                 _, loss, summary = self.sess.run([self.train_op, self.loss, merged],
                                                  feed_dict={self.Y_: ndct_batch_images, self.X:ldct_batch_images, self.lr: lr[epoch],
                                                             self.is_training: True})
@@ -117,7 +114,7 @@ class denoiser(object):
                 writer.add_summary(summary, iter_num)
             if np.mod(epoch + 1, eval_every_epoch) == 0:
                 self.evaluate(iter_num, ndct_eval_data, ldct_eval_data, sample_dir=sample_dir, summary_merged=summary_psnr,
-                              summary_writer=writer)  # eval_data value range is 0-255
+                              summary_writer=writer, summ_img=img)  # eval_data value range is 0-255
                 self.save(iter_num, ckpt_dir)
         print("[*] Finish training.")
 
@@ -143,28 +140,38 @@ class denoiser(object):
         else:
             return False, 0
 
-    def test(self, test_files, ckpt_dir, save_dir):
+    def test(self, ldct_files, ndct_files, ckpt_dir, save_dir):
         """Test DnCNN"""
         # init variables
         tf.initialize_all_variables().run()
-        assert len(test_files) != 0, 'No testing data!'
+        assert len(ldct_files) != 0, 'No testing data!'
         load_model_status, global_step = self.load(ckpt_dir)
         assert load_model_status == True, '[!] Load weights FAILED...'
         print(" [*] Load weights SUCCESS...")
         psnr_sum = 0
         print("[*] start testing...")
-        for idx in xrange(len(test_files)):
-            clean_image = load_floats(test_files[idx])
-            output_clean_image, noisy_image = self.sess.run([self.Y, self.X],
-                                                            feed_dict={self.Y_: clean_image, self.is_training: False})
-            groundtruth = np.clip(255 * clean_image, 0, 255).astype('uint8')
-            noisyimage = np.clip(255 * noisy_image, 0, 255).astype('uint8')
-            outputimage = np.clip(255 * output_clean_image, 0, 255).astype('uint8')
+	for idx in xrange(len(ldct_files)):
+	    noisy_image= ldct_files[idx]
+	    clean_image= ndct_files[idx]
+	    output_clean_image = self.sess.run(
+	        [self.Y],
+                feed_dict={self.X: noisy_image,
+	  		   self.Y_: clean_image,
+                           self.is_training: False})
+	    output_clean_image= np.asarray(output_clean_image)
+	    #output_clean_image= output_clean_image[255, :, :, :, :]
+            scalef= max(np.amax(noisy_image), np.amax(clean_image), np.amax(output_clean_image))
+            noisy_image = np.clip(255 * noisy_image/scalef, 0, 255).astype('uint8')
+            output_clean_image = np.clip(255 * output_clean_image/scalef, 0, 255).astype('uint8')
+            clean_image = np.clip(255 * clean_image/scalef, 0, 255).astype('uint8')
             # calculate PSNR
-            psnr = cal_psnr(groundtruth, outputimage)
+            psnr = cal_psnr(clean_image, output_clean_image)
             print("img%d PSNR: %.2f" % (idx, psnr))
             psnr_sum += psnr
-            save_images(os.path.join(save_dir, 'noisy%d.flt' % idx), noisyimage)
-            save_images(os.path.join(save_dir, 'denoised%d.flt' % idx), outputimage)
-        avg_psnr = psnr_sum / len(test_files)
+            output_clean_image, noisy_image= arr2Img(output_clean_image, noisy_image)
+	    clean_image= np.reshape(clean_image, (512, 512))
+            clean_image= Image.fromarray(clean_image, 'L')
+            save_images(os.path.join(save_dir, 'test_%d.png' % (idx + 1)),
+                        clean_image, noisy_image, output_clean_image)
+        avg_psnr = psnr_sum / len(ndct_files)
         print("--- Average PSNR %.2f ---" % avg_psnr)

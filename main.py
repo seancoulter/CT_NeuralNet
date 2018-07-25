@@ -21,8 +21,6 @@ parser.add_argument('--test_set', dest='test_set', default='BSD68', help='datase
 args = parser.parse_args()
 
 
-#filepath:./noisydata/ndct/train/img_ndct_pats.npy
-# ./noisydata/ldct/train/img_ndct_pats.npy
 def denoiser_train(denoiser, lr):
     with load_data(filepath='./noisydata/ndct/train/raw_float_pats.npy') as ndct_data, load_data(filepath='./noisydata/sparse/train/raw_float_pats.npy') as ldct_data:
         # if there is a small memory, please comment this line and uncomment the line99 in model.py
@@ -37,7 +35,7 @@ def denoiser_train(denoiser, lr):
 
 
 def denoiser_test(denoiser):
-    ldct_files= sorted(glob('./noisydata/ldct/test/*img.flt'.format(args.test_set)))
+    ldct_files= sorted(glob('./noisydata/sparse/test/*img.flt'.format(args.test_set)))
     ldct_files= load_floats(ldct_files)
     ndct_files= sorted(glob('./noisydata/ndct/test/*img.flt'.format(args.test_set)))
     ndct_files= load_floats(ndct_files)
